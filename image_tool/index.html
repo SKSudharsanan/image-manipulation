@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Manipulation Tool</title>
+</head>
+<body>
+    <h1>Image Manipulation Tool</h1>
+    <input type="file" id="upload" />
+    <canvas id="canvas"></canvas>
+    <button id="fliph">Flip Horizontal</button>
+    <button id="flipv">Flip Vertical</button>
+
+    <script type="module">
+        import init, { flip_horizontal, flip_vertical } from './pkg/image_tool.js';
+
+        async function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function initTool() {
+            await init();  // Load the WebAssembly module
+            const upload = document.getElementById('upload');
+            const flipHButton = document.getElementById('fliph');
+            const flipVButton = document.getElementById('flipv');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            let imageData = null;
+
+            upload.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                const arrayBuffer = await loadImage(file);
+
+                // Load image into the canvas for display
+                const blob = new Blob([arrayBuffer]);
+                const img = new Image();
+                img.src = URL.createObjectURL(blob);
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                };
+
+                // Prepare the image data for manipulation
+                imageData = new Uint8Array(arrayBuffer);
+            });
+
+            flipHButton.addEventListener('click', () => {
+                if (imageData) {
+                    const flippedData = flip_horizontal(imageData);
+                    const blob = new Blob([flippedData], { type: 'image/png' });
+                    const img = new Image();
+                    img.src = URL.createObjectURL(blob);
+                    img.onload = () => {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                    };
+                }
+            });
+            flipVButton.addEventListener('click', () => {
+                if (imageData) {
+                    const flippedData = flip_vertical(imageData);
+                    const blob = new Blob([flippedData], { type: 'image/png' });
+                    const img = new Image();
+                    img.src = URL.createObjectURL(blob);
+                    img.onload = () => {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                    };
+                }
+            });
+        }
+
+        initTool();
+    </script>
+</body>
+</html>
